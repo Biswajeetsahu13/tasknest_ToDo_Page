@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>TaskNest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #F6F1E7;
+    --paper-line: #DCD2BE;
+    --ink: #2B2E3A;
+    --ink-soft: #5B5A62;
+    --rust: #B5533C;
+    --sage: #7C8B6F;
+    --shadow: #8C7A63;
+    --card: #FBF8F2;
+  }
+
+  *{box-sizing:border-box;}
+
+ html,
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: 'IBM Plex Mono', monospace;
+
+    background:
+        linear-gradient(rgba(255,255,255,0.15), rgba(255,255,255,0.15)),
+        url("bg.png");
+
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+body{
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    padding:30px 16px 80px;
+}
+
+  .desk{
+    width:90%;
+    max-width:850px;
+}
+  
+
+  header.masthead{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:18px;
+    padding:0 6px;
+  }
+
+ header.masthead h1 {
+    font-family: 'Fraunces', serif;
+    font-size: 3.4rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin: 0;
+    color: #2B2E3A;
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.12);
+    transition: all .3s ease;
+}
+
+header.masthead h1 span {
+    color: #6A994E;
+    font-style: italic;
+    font-weight: 700;
+}
+
+  .datestamp{
+    font-family:'Caveat', cursive;
+    font-size:1.15rem;
+    color:var(--ink-soft);
+    transform:rotate(-3deg);
+    white-space:nowrap;
+  }
+
+  .page{
+    position:relative;
+    background:var(--card);
+    border-radius:6px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.6) inset,
+      0 18px 40px -18px rgba(43,46,58,0.35),
+      0 2px 6px rgba(43,46,58,0.08);
+    overflow:hidden;
+  }
+
+  /* torn paper top edge */
+  .page::before{
+    content:"";
+    display:block;
+    height:14px;
+    width:100%;
+    background:
+      linear-gradient(135deg, var(--card) 50%, transparent 50%) 0 0/14px 14px repeat-x,
+      linear-gradient(-135deg, var(--card) 50%, transparent 50%) 0 6px/14px 14px repeat-x;
+    background-color:transparent;
+    filter:drop-shadow(0 -1px 0 rgba(43,46,58,0.05));
+  }
+
+  .margin-rule{
+    position:absolute;
+    top:14px;
+    bottom:0;
+    left:42px;
+    width:1px;
+    background:rgba(181,83,60,0.28);
+  }
+
+.page-inner{
+    padding:40px 45px 35px 70px;
+}
+
+  .add-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding-bottom:16px;
+    margin-bottom:6px;
+    border-bottom:1px dashed var(--paper-line);
+  }
+
+  .add-row .bullet{
+    color:var(--rust);
+    font-size:1.1rem;
+    flex-shrink:0;
+  }
+
+  #task-input{
+    flex:1;
+    border:none;
+    background:transparent;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:1rem;
+    color:var(--ink);
+    padding:8px 2px;
+    outline:none;
+  }
+
+  #task-input::placeholder{
+    color:#A79E8C;
+  }
+
+  .add-btn{
+    border:none;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.85rem;
+    font-weight:600;
+    letter-spacing:0.02em;
+    padding:9px 16px;
+    border-radius:4px;
+    cursor:pointer;
+    transition:transform 0.12s ease, background 0.15s ease;
+  }
+  .add-btn:hover{ background:var(--rust); }
+  .add-btn:active{ transform:scale(0.96); }
+
+  .filters{
+    display:flex;
+    gap:4px;
+    margin:14px 0 4px;
+  }
+
+  .filters button{
+    border:none;
+    background:transparent;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.78rem;
+    color:var(--ink-soft);
+    padding:5px 10px;
+    border-radius:20px;
+    cursor:pointer;
+    letter-spacing:0.03em;
+  }
+
+  .filters button.active{
+    background:rgba(181,83,60,0.12);
+    color:var(--rust);
+    font-weight:600;
+  }
+
+  ul#list{
+    list-style:none;
+    margin:10px 0 4px;
+    padding:0;
+    min-height:60px;
+  }
+
+  li.task{
+    position:relative;
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    padding:12px 2px;
+    border-bottom:1px solid var(--paper-line);
+    animation:rise 0.28s ease both;
+  }
+
+  @keyframes rise{
+    from{ opacity:0; transform:translateY(6px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  li.task.removing{
+    animation:fall 0.22s ease forwards;
+  }
+  @keyframes fall{
+    to{ opacity:0; transform:translateX(14px) scale(0.98); max-height:0; padding:0; margin:0; border:none; }
+  }
+
+  .check{
+    position:relative;
+    width:20px;
+    height:20px;
+    flex-shrink:0;
+    margin-top:2px;
+    border:1.6px solid var(--shadow);
+    border-radius:50%;
+    cursor:pointer;
+    background:var(--card);
+    transition:border-color 0.15s ease, background 0.15s ease;
+  }
+  .check:hover{ border-color:var(--rust); }
+
+  li.task.done .check{
+    background:var(--sage);
+    border-color:var(--sage);
+  }
+  li.task.done .check::after{
+    content:"";
+    position:absolute;
+    left:5px; top:2px;
+    width:6px; height:10px;
+    border:solid var(--card);
+    border-width:0 2px 2px 0;
+    transform:rotate(40deg);
+  }
+
+  .task-body{
+    flex:1;
+    min-width:0;
+  }
+
+  .task-text{
+    font-size:0.98rem;
+    line-height:1.4;
+    word-break:break-word;
+    outline:none;
+    cursor:text;
+  }
+
+  li.task.done .task-text{
+    color:#9A9488;
+    position:relative;
+  }
+  li.task.done .task-text::after{
+    content:"";
+    position:absolute;
+    left:0; right:0; top:50%;
+    height:1.4px;
+    background:var(--rust);
+    opacity:0.55;
+    transform:scaleX(0);
+    transform-origin:left;
+    animation:strike 0.35s ease forwards;
+  }
+  @keyframes strike{ to{ transform:scaleX(1); } }
+
+  .meta{
+    font-size:0.7rem;
+    color:#ADA593;
+    margin-top:3px;
+    letter-spacing:0.02em;
+  }
+
+  .actions{
+    display:flex;
+    gap:6px;
+    opacity:0;
+    transition:opacity 0.15s ease;
+  }
+  li.task:hover .actions{ opacity:1; }
+
+  .actions button{
+    border:none;
+    background:transparent;
+    color:var(--ink-soft);
+    font-size:0.95rem;
+    cursor:pointer;
+    padding:4px 6px;
+    border-radius:4px;
+    line-height:1;
+  }
+  .actions button:hover{ background:rgba(43,46,58,0.06); color:var(--ink); }
+  .actions button.del:hover{ color:var(--rust); }
+
+  .empty{
+    text-align:center;
+    padding:38px 10px 26px;
+    color:#AFA692;
+  }
+  .empty .stamp{
+    font-family:'Caveat', cursive;
+    font-size:1.6rem;
+    color:var(--sage);
+    transform:rotate(-4deg);
+    display:inline-block;
+    border:2px solid var(--sage);
+    border-radius:8px;
+    padding:2px 14px;
+    opacity:0.8;
+  }
+
+  footer.tally{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:16px;
+    padding-top:12px;
+    border-top:1px solid var(--paper-line);
+    font-size:0.76rem;
+    color:var(--ink-soft);
+  }
+
+  footer.tally .clear{
+    background:none;
+    border:none;
+    color:var(--ink-soft);
+    text-decoration:underline;
+    cursor:pointer;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.76rem;
+  }
+  footer.tally .clear:hover{ color:var(--rust); }
+
+  @media (max-width:420px){
+    header.masthead{ flex-direction:column; align-items:flex-start; gap:4px; }
+    .page-inner{ padding:22px 16px 18px 46px; }
+    .margin-rule{ left:30px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="desk">
+  <header class="masthead">
+    <h1>Task<span>Nest</span></h1>
+    <div class="datestamp" id="datestamp"></div>
+  </header>
+
+  <div class="page">
+    <div class="margin-rule"></div>
+    <div class="page-inner">
+
+      <div class="add-row">
+        <span class="bullet">✎</span>
+        <input id="task-input" type="text" placeholder="Write a new line…" maxlength="200" />
+        <button class="add-btn" id="add-btn">Add</button>
+      </div>
+
+      <div class="filters">
+        <button class="active" data-filter="all">All</button>
+        <button data-filter="active">Open</button>
+        <button data-filter="done">Done</button>
+      </div>
+
+      <ul id="list"></ul>
+
+      <footer class="tally">
+        <span id="count-label">0 open</span>
+        <button class="clear" id="clear-done">Clear done</button>
+      </footer>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+const STORE_KEY = 'tasknest-tasks-v1';
+  let tasks = [];
+  let filter = 'all';
+
+  const listEl = document.getElementById('list');
+  const inputEl = document.getElementById('task-input');
+  const addBtn = document.getElementById('add-btn');
+  const countLabel = document.getElementById('count-label');
+  const clearDoneBtn = document.getElementById('clear-done');
+  const filterBtns = document.querySelectorAll('.filters button');
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY);
+      tasks = raw ? JSON.parse(raw) : seedTasks();
+    }catch(e){
+      tasks = seedTasks();
+    }
+  }
+
+  function seedTasks(){
+    return [
+      { id: cryptoId(), text: 'Tap the circle to mark a task done', done: false, ts: Date.now() },
+      { id: cryptoId(), text: 'Click any task text to edit it', done: false, ts: Date.now() },
+      { id: cryptoId(), text: 'This line has already been crossed off', done: true, ts: Date.now() }
+    ];
+  }
+
+  function save(){
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify(tasks)); }catch(e){}
+  }
+
+  function cryptoId(){
+    return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8);
+  }
+
+  function formatTime(ts){
+    const d = new Date(ts);
+    return d.toLocaleDateString(undefined, { month:'short', day:'numeric' }) + ' · ' +
+           d.toLocaleTimeString(undefined, { hour:'numeric', minute:'2-digit' });
+  }
+
+  function render(){
+    listEl.innerHTML = '';
+    const visible = tasks.filter(t => {
+      if(filter === 'active') return !t.done;
+      if(filter === 'done') return t.done;
+      return true;
+    });
+
+    if(visible.length === 0){
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.innerHTML = filter === 'done'
+        ? '<span class="stamp">nothing crossed off yet</span>'
+        : '<span class="stamp">clean page — add a line</span>';
+      listEl.appendChild(empty);
+    } else {
+      visible.forEach(t => listEl.appendChild(buildRow(t)));
+    }
+
+    const openCount = tasks.filter(t => !t.done).length;
+    countLabel.textContent = openCount + (openCount === 1 ? ' open' : ' open') + ' · ' + tasks.length + ' total';
+    save();
+  }
+
+  function buildRow(task){
+    const li = document.createElement('li');
+    li.className = 'task' + (task.done ? ' done' : '');
+    li.dataset.id = task.id;
+
+    const check = document.createElement('div');
+    check.className = 'check';
+    check.title = 'Mark ' + (task.done ? 'open' : 'done');
+    check.addEventListener('click', () => toggleDone(task.id));
+
+    const body = document.createElement('div');
+    body.className = 'task-body';
+
+    const text = document.createElement('div');
+    text.className = 'task-text';
+    text.textContent = task.text;
+    text.contentEditable = 'true';
+    text.spellcheck = false;
+    text.addEventListener('blur', () => commitEdit(task.id, text));
+    text.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter'){ e.preventDefault(); text.blur(); }
+      if(e.key === 'Escape'){ text.textContent = task.text; text.blur(); }
+    });
+
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.textContent = formatTime(task.ts);
+
+    body.appendChild(text);
+    body.appendChild(meta);
+
+    const actions = document.createElement('div');
+    actions.className = 'actions';
+    const delBtn = document.createElement('button');
+    delBtn.className = 'del';
+    delBtn.title = 'Delete';
+    delBtn.textContent = '✕';
+    delBtn.addEventListener('click', () => removeTask(task.id, li));
+    actions.appendChild(delBtn);
+
+    li.appendChild(check);
+    li.appendChild(body);
+    li.appendChild(actions);
+    return li;
+  }
+
+  function addTask(){
+    const val = inputEl.value.trim();
+    if(!val) return;
+    tasks.unshift({ id: cryptoId(), text: val, done: false, ts: Date.now() });
+    inputEl.value = '';
+    render();
+  }
+
+  function toggleDone(id){
+    const t = tasks.find(x => x.id === id);
+    if(t){ t.done = !t.done; render(); }
+  }
+
+  function commitEdit(id, el){
+    const val = el.textContent.trim();
+    const t = tasks.find(x => x.id === id);
+    if(!t) return;
+    if(!val){
+      removeTask(id, el.closest('li'));
+      return;
+    }
+    t.text = val;
+    save();
+  }
+
+  function removeTask(id, li){
+    if(li){
+      li.classList.add('removing');
+      li.addEventListener('animationend', () => {
+        tasks = tasks.filter(x => x.id !== id);
+        render();
+      }, { once:true });
+    } else {
+      tasks = tasks.filter(x => x.id !== id);
+      render();
+    }
+  }
+
+  addBtn.addEventListener('click', addTask);
+  inputEl.addEventListener('keydown', e => { if(e.key === 'Enter') addTask(); });
+
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filter = btn.dataset.filter;
+      render();
+    });
+  });
+
+  clearDoneBtn.addEventListener('click', () => {
+    tasks = tasks.filter(t => !t.done);
+    render();
+  });
+
+  document.getElementById('datestamp').textContent = new Date().toLocaleDateString(undefined, {
+    weekday:'long', month:'long', day:'numeric'
+  });
+
+  load();
+  render();
+})();
+</script>
+</body>
+</html>
